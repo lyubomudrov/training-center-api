@@ -6,4 +6,4 @@
 - `GET /api/teachers` - Список всех преподавателей
 - `GET /api/students` - Список всех студентов
 - `GET /api/registrations` - Список всех регистраций
-  ![API Response](screenshot.png)
+  ![API Response]("C:\Users\Ardor Gaming\Downloads\Telegram Desktop\screenshot.png")
