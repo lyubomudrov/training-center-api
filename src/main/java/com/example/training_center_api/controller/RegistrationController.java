@@ -4,13 +4,14 @@ import com.example.training_center_api.model.Registration;
 import com.example.training_center_api.service.RegistrationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.http.ResponseEntity;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/registrations")
-public class RegistrationController {
+class RegistrationController {
+
     @Autowired
     private RegistrationService registrationService;
 
@@ -20,17 +21,34 @@ public class RegistrationController {
     }
 
     @GetMapping("/{id}")
-    public Optional<Registration> getRegistrationById(@PathVariable Long id) {
-        return registrationService.getRegistrationById(id);
+    public ResponseEntity<Registration> getRegistrationById(@PathVariable Long id) {
+        Optional<Registration> reg = registrationService.getRegistrationById(id);
+        return reg.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public Registration createRegistration(@RequestBody Registration registration) {
-        return registrationService.saveRegistration(registration);
+    public ResponseEntity<Registration> createRegistration(@RequestBody Registration registration) {
+        Registration saved = registrationService.saveRegistration(registration);
+        return ResponseEntity.ok(saved);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Registration> updateRegistration(@PathVariable Long id, @RequestBody Registration registration) {
+        if (!registrationService.getRegistrationById(id).isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        registration.setId(id);
+        Registration updated = registrationService.saveRegistration(registration);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
-    public void deleteRegistration(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteRegistration(@PathVariable Long id) {
+        if (!registrationService.getRegistrationById(id).isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
         registrationService.deleteRegistration(id);
+        return ResponseEntity.noContent().build();
     }
 }
