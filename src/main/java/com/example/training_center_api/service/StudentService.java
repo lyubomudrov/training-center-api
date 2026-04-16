@@ -1,6 +1,7 @@
 package com.example.training_center_api.service;
 
 import com.example.training_center_api.model.Student;
+import com.example.training_center_api.repository.RegistrationRepository;
 import com.example.training_center_api.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,7 +26,18 @@ public class StudentService {
         return studentRepository.save(student);
     }
 
+    @Autowired
+    private RegistrationRepository registrationRepository;
+
     public void deleteStudent(Long id) {
-        studentRepository.deleteById(id);
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Студент не найден"));
+
+        boolean hasRegistrations = registrationRepository.existsByStudent(student);
+        if (hasRegistrations) {
+            throw new IllegalStateException("Нельзя удалить студента, у которого есть регистрации.");
+        }
+
+        studentRepository.delete(student);
     }
 }

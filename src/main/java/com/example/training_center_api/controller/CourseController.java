@@ -1,10 +1,14 @@
 package com.example.training_center_api.controller;
 
 import com.example.training_center_api.model.Course;
+import com.example.training_center_api.model.Teacher;
+import com.example.training_center_api.repository.TeacherRepository;
 import com.example.training_center_api.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.training_center_api.dto.CourseRequestDTO;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +16,12 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/courses")
 public class CourseController {
+    private final TeacherRepository teacherRepository;
+    @Autowired
+    public CourseController(CourseService courseService, TeacherRepository teacherRepository) {
+        this.courseService = courseService;
+        this.teacherRepository = teacherRepository;
+    }
 
     @Autowired
     private CourseService courseService;
@@ -32,29 +42,52 @@ public class CourseController {
 
     // Create: Добавить новый курс
     @PostMapping
-    public ResponseEntity<Course> createCourse(@RequestBody Course course) {
-        Course savedCourse = courseService.saveCourse(course);
-        return ResponseEntity.ok(savedCourse);
+    public ResponseEntity<Course> createCourse(@RequestBody CourseRequestDTO dto) {
+        Course course = new Course();
+        course.setName(dto.name);
+        course.setDescription(dto.description);
+        course.setActive(dto.active);
+
+        if (dto.teacherId != null) {
+            Teacher teacher = teacherRepository.findById(dto.teacherId)
+                    .orElseThrow(() -> new RuntimeException("Преподаватель не найден по id = " + dto.teacherId));
+            course.setTeacher(teacher);
+        }
+
+        return ResponseEntity.ok(courseService.saveCourse(course));
     }
 
     // Update: Полное обновление курса
     @PutMapping("/{id}")
-    public ResponseEntity<Course> updateCourse(@PathVariable Long id, @RequestBody Course course) {
-        if (!courseService.getCourseById(id).isPresent()) {
+    public ResponseEntity<Course> updateCourse(@PathVariable Long id, @RequestBody CourseRequestDTO dto) {
+        Optional<Course> existingCourseOpt = courseService.getCourseById(id);
+        if (existingCourseOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        course.setId(id);
-        Course updatedCourse = courseService.saveCourse(course);
-        return ResponseEntity.ok(updatedCourse);
+
+        Course course = existingCourseOpt.get();
+        course.setName(dto.name);
+        course.setDescription(dto.description);
+        course.setActive(dto.active);
+
+        if (dto.teacherId != null) {
+            Teacher teacher = teacherRepository.findById(dto.teacherId)
+                    .orElseThrow(() -> new RuntimeException("Преподаватель не найден по id = " + dto.teacherId));
+            course.setTeacher(teacher);
+        } else {
+            course.setTeacher(null);
+        }
+
+        return ResponseEntity.ok(courseService.saveCourse(course));
     }
 
-    // Delete: Удалить курс
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
-        if (!courseService.getCourseById(id).isPresent()) {
-            return ResponseEntity.notFound().build();
+        try {
+            courseService.deleteCourse(id);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build(); // 409 Conflict
         }
-        courseService.deleteCourse(id);
-        return ResponseEntity.noContent().build();
     }
 }
