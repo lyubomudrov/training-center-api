@@ -6,6 +6,4 @@ public class CourseRequestDTO {
     public String description;
     public Long teacherId;
     public boolean active;
-
-
 }

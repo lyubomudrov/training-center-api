@@ -31,6 +31,10 @@ public class Course {
     @com.fasterxml.jackson.annotation.JsonIgnore
     private List<Registration> registrations;
 
+    @ManyToOne
+    @JoinColumn(name = "classroom_id")
+    private Classroom classroom;
+
 
     // Getters and setters
     public Long getId() { return id; }
@@ -47,4 +51,12 @@ public class Course {
 
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { this.isActive = active; }
+
+    public Classroom getClassroom() {
+        return classroom;
+    }
+
+    public void setClassroom(Classroom classroom) {
+        this.classroom = classroom;
+    }
 }
